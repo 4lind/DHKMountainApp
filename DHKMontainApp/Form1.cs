@@ -1,0 +1,196 @@
+﻿using DHKMontainApp.userControls;
+using DHKMontainApp.userControls.button_window;
+using System;
+using System.Drawing;
+using System.Globalization;
+using System.Windows.Forms;
+
+namespace DHKMontainApp
+{
+    public partial class Form1 : Form
+    {
+        // Cached UserControls (created once)
+        private homeviewPage homeUC;
+        private UserControl costumerUC;
+        private payment paymentUC;
+        private UserControl itemsUC;
+        private sales salesUC;
+
+        // Track current page
+        private UserControl currentPage;
+
+        public Form1()
+        {
+            InitializeComponent();
+
+            // Simple connection test
+            if (!Database.TestConnection())
+            {
+                MessageBox.Show("Cannot connect to database. Some features may be unavailable.",
+                               "Connection Error",
+                               MessageBoxButtons.OK,
+                               MessageBoxIcon.Warning);
+            }
+
+            // Rest of your code remains the same...
+            homeUC = new homeviewPage();
+            costumerUC = new costumers();
+            paymentUC = new payment();
+            itemsUC = new items();
+            salesUC = new sales();
+
+            homeUC.NavigateRequested += HomePage_NavigateRequested;
+            LoadPage(homeUC);
+            lbl_dashboard.Text = btn_Home.Text;
+            btn_Home.BackColor = Color.FromArgb(50, 52, 120);
+        }
+
+        /* ===================== TIME ===================== */
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            UpdateDateTime();
+        }
+
+        private void UpdateDateTime()
+        {
+            var culture = new CultureInfo("ar-IQ");
+            lblDate.Text = DateTime.Now.ToString("dddd، dd MMMM yyyy", culture);
+            lbl_datetime.Text = DateTime.Now.ToString("tt hh:mm:ss", culture);
+        }
+
+        /* ===================== NAVIGATION ===================== */
+
+        private void LoadPage(UserControl page)
+        {
+            // Prevent reloading same page
+            if (currentPage == page)
+                return;
+
+            homePanel.SuspendLayout();
+
+            // Hide current page
+            if (currentPage != null)
+                currentPage.Visible = false;
+
+            // Add page once only
+            if (!homePanel.Controls.Contains(page))
+            {
+                page.Dock = DockStyle.Fill;
+                page.Margin = new Padding(0);
+                homePanel.Controls.Add(page);
+            }
+
+            // Show selected page
+            page.Visible = true;
+            page.BringToFront();
+            currentPage = page;
+
+            homePanel.ResumeLayout();
+        }
+
+        private void ResetButtons()
+        {
+            btn_Home.BackColor = default;
+            btn_costumer.BackColor = default;
+            btn_payment.BackColor = default;
+            btn_item.BackColor = default;
+            btn_sale.BackColor = default;
+        }
+
+        /* ===================== BUTTON EVENTS ===================== */
+
+        private void btn_Home_Click(object sender, EventArgs e)
+        {
+            ResetButtons();
+            btn_Home.BackColor = Color.FromArgb(50, 52, 120);
+            lbl_dashboard.Text = btn_Home.Text;
+            LoadPage(homeUC);
+        }
+
+        private void btn_costumer_Click(object sender, EventArgs e)
+        {
+            ResetButtons();
+            btn_costumer.BackColor = Color.FromArgb(50, 52, 120);
+            lbl_dashboard.Text = btn_costumer.Text;
+            LoadPage(costumerUC);
+        }
+
+        private void btn_payment_Click(object sender, EventArgs e)
+        {
+            ResetButtons();
+            btn_payment.BackColor = Color.FromArgb(50, 52, 120);
+            lbl_dashboard.Text = btn_payment.Text;
+            LoadPage(paymentUC);
+        }
+
+        private void btn_item_Click(object sender, EventArgs e)
+        {
+            ResetButtons();
+            btn_item.BackColor = Color.FromArgb(50, 52, 120);
+            lbl_dashboard.Text = btn_item.Text;
+            LoadPage(itemsUC);
+        }
+
+        private void btn_sale_Click(object sender, EventArgs e)
+        {
+            ResetButtons();
+            btn_sale.BackColor = Color.FromArgb(50, 52, 120);
+            lbl_dashboard.Text = btn_sale.Text;
+
+            // Refresh data safely
+            salesUC.LoadSalesData();
+
+            LoadPage(salesUC);
+        }
+
+        /* ===================== HOME SHORTCUTS ===================== */
+
+        private void HomePage_NavigateRequested(object sender, string pageName)
+        {
+            switch (pageName)
+            {
+                case "payment":
+                    btn_payment.PerformClick();
+                    break;
+
+                case "customers":
+                    using (var f = new addCostumer())
+                    {
+                        f.ShowDialog();
+                    }
+                    break;
+
+                case "items":
+                    using (var f = new additems())
+                    {
+                        f.ShowDialog();
+                    }
+                    break;
+
+                case "sales":
+                    btn_sale.PerformClick();
+                    break;
+            }
+        }
+
+        /* ===================== CLEANUP ===================== */
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+
+            homeUC?.Dispose();
+            costumerUC?.Dispose();
+            paymentUC?.Dispose();
+            itemsUC?.Dispose();
+            salesUC?.Dispose();
+        }
+
+        private void btnSetting_Click(object sender, EventArgs e)
+        {
+            SettingForm settingForm = new SettingForm();
+            settingForm.ShowDialog();
+        }
+    }
+}
