@@ -60,7 +60,7 @@
             this.panel1.Location = new System.Drawing.Point(5, 3);
             this.panel1.Name = "panel1";
             this.panel1.Padding = new System.Windows.Forms.Padding(0, 0, 0, 1);
-            this.panel1.Size = new System.Drawing.Size(890, 48);
+            this.panel1.Size = new System.Drawing.Size(984, 48);
             this.panel1.TabIndex = 0;
             // 
             // btn_refresh
@@ -92,7 +92,7 @@
             this.btn_remove.Image = global::DHKMontainApp.Properties.Resources.delete_forever_24dp_FFFFFF_FILL0_wght400_GRAD0_opsz24;
             this.btn_remove.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btn_remove.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btn_remove.Location = new System.Drawing.Point(552, 0);
+            this.btn_remove.Location = new System.Drawing.Point(646, 0);
             this.btn_remove.Name = "btn_remove";
             this.btn_remove.Padding = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.btn_remove.Size = new System.Drawing.Size(89, 47);
@@ -113,7 +113,7 @@
             this.txtEdite.Image = global::DHKMontainApp.Properties.Resources.edit_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24;
             this.txtEdite.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.txtEdite.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.txtEdite.Location = new System.Drawing.Point(641, 0);
+            this.txtEdite.Location = new System.Drawing.Point(735, 0);
             this.txtEdite.Name = "txtEdite";
             this.txtEdite.Padding = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.txtEdite.Size = new System.Drawing.Size(100, 47);
@@ -134,7 +134,7 @@
             this.btn_addCostumer.Image = global::DHKMontainApp.Properties.Resources.addperson;
             this.btn_addCostumer.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btn_addCostumer.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btn_addCostumer.Location = new System.Drawing.Point(741, 0);
+            this.btn_addCostumer.Location = new System.Drawing.Point(835, 0);
             this.btn_addCostumer.Name = "btn_addCostumer";
             this.btn_addCostumer.Padding = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.btn_addCostumer.Size = new System.Drawing.Size(149, 47);
@@ -197,7 +197,7 @@
             this.dataGridView1.Location = new System.Drawing.Point(0, 0);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.dataGridView1.Size = new System.Drawing.Size(890, 511);
+            this.dataGridView1.Size = new System.Drawing.Size(984, 511);
             this.dataGridView1.TabIndex = 1;
             // 
             // panel4
@@ -207,7 +207,7 @@
             this.panel4.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel4.Location = new System.Drawing.Point(5, 51);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(890, 35);
+            this.panel4.Size = new System.Drawing.Size(984, 35);
             this.panel4.TabIndex = 2;
             // 
             // panel5
@@ -216,7 +216,7 @@
             this.panel5.Controls.Add(this.txtSearch);
             this.panel5.Controls.Add(this.panel2);
             this.panel5.Dock = System.Windows.Forms.DockStyle.Right;
-            this.panel5.Location = new System.Drawing.Point(500, 0);
+            this.panel5.Location = new System.Drawing.Point(594, 0);
             this.panel5.Name = "panel5";
             this.panel5.Size = new System.Drawing.Size(390, 35);
             this.panel5.TabIndex = 0;
@@ -227,7 +227,7 @@
             this.panel6.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel6.Location = new System.Drawing.Point(5, 86);
             this.panel6.Name = "panel6";
-            this.panel6.Size = new System.Drawing.Size(890, 511);
+            this.panel6.Size = new System.Drawing.Size(984, 511);
             this.panel6.TabIndex = 3;
             // 
             // costumers
@@ -240,7 +240,7 @@
             this.Controls.Add(this.panel1);
             this.Name = "costumers";
             this.Padding = new System.Windows.Forms.Padding(5, 3, 5, 3);
-            this.Size = new System.Drawing.Size(900, 600);
+            this.Size = new System.Drawing.Size(994, 600);
             this.panel1.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();

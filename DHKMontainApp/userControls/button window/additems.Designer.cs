@@ -77,7 +77,9 @@
             this.txtcount.Name = "txtcount";
             this.txtcount.Size = new System.Drawing.Size(203, 19);
             this.txtcount.TabIndex = 37;
+            this.txtcount.Click += new System.EventHandler(this.txtcount_Click);
             this.txtcount.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtcount_KeyDown);
+            this.txtcount.Leave += new System.EventHandler(this.txtcount_Leave);
             // 
             // txtName
             // 
@@ -173,7 +175,9 @@
             this.txtCouple.Name = "txtCouple";
             this.txtCouple.Size = new System.Drawing.Size(203, 19);
             this.txtCouple.TabIndex = 48;
+            this.txtCouple.Click += new System.EventHandler(this.txtCouple_Click);
             this.txtCouple.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtCouple_KeyDown);
+            this.txtCouple.Leave += new System.EventHandler(this.txtCouple_Leave);
             // 
             // label3
             // 

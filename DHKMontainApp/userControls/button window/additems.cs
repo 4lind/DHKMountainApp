@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Data.SqlClient;
+using System.Data.SQLite;
 
 namespace DHKMontainApp.userControls.button_window
 {
@@ -17,30 +17,52 @@ namespace DHKMontainApp.userControls.button_window
         {
             InitializeComponent();
         }
-
+        InputLanguage previousLanguage;
         private void btn_additem_Click(object sender, EventArgs e)
         {
-            // Validate input
-            if (txtName.Text == "" || txttype.Text == "" || txtcount.Text == "")
+            // 1. Check for empty fields
+            if (string.IsNullOrWhiteSpace(txtName.Text) ||
+                string.IsNullOrWhiteSpace(txttype.Text) ||
+                string.IsNullOrWhiteSpace(txtcount.Text) ||
+                string.IsNullOrWhiteSpace(txtCouple.Text))
             {
                 MessageBox.Show("يرجى ملء جميع الحقول.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
+            // 2. Validate that txtcount contains a valid integer
+            if (!int.TryParse(txtcount.Text, out int count))
+            {
+                MessageBox.Show("حقل العدد يجب أن يحتوي على رقم صحيح.", "خطأ في الإدخال", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtcount.Focus();
+                txtcount.SelectAll();
+                return;
+            }
+
+            // 3. Validate that txtCouple contains a valid integer
+            if (!int.TryParse(txtCouple.Text, out int couple))
+            {
+                MessageBox.Show("حقل الزوج يجب أن يحتوي على رقم صحيح.", "خطأ في الإدخال", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtCouple.Focus();
+                txtCouple.SelectAll();
+                return;
+            }
+
+            // 4. Proceed with database insertion
             try
             {
                 Database.Open();
 
-                string query = "INSERT INTO Product (productName, productCount, producttype , productCouple) VALUES (@name, @count, @type,@couple )";
-                SqlCommand cmd = new SqlCommand(query, Database.con);
+                string query = "INSERT INTO Product (productName, productCount, producttype, productCouple) VALUES (@name, @count, @type, @couple)";
+                using (SQLiteCommand cmd = new SQLiteCommand(query, Database.con))
+                {
+                    cmd.Parameters.AddWithValue("@name", txtName.Text);
+                    cmd.Parameters.AddWithValue("@count", count);      // integer
+                    cmd.Parameters.AddWithValue("@type", txttype.Text);
+                    cmd.Parameters.AddWithValue("@couple", couple);    // integer
 
-                cmd.Parameters.AddWithValue("@name", txtName.Text);
-                cmd.Parameters.AddWithValue("@count", txtcount.Text);
-                cmd.Parameters.AddWithValue("@type", txttype.Text);
-                cmd.Parameters.AddWithValue("@couple", txtCouple.Text);
-
-
-                cmd.ExecuteNonQuery();
+                    cmd.ExecuteNonQuery();
+                }
 
                 Database.Close();
 
@@ -163,6 +185,60 @@ namespace DHKMontainApp.userControls.button_window
                 e.SuppressKeyPress = true;
                 this.Close();
 
+            }
+        }
+
+        private void txtcount_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtCouple_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtCouple_Click(object sender, EventArgs e)
+        {
+            previousLanguage = InputLanguage.CurrentInputLanguage;
+
+            foreach (InputLanguage lang in InputLanguage.InstalledInputLanguages)
+            {
+                if (lang.Culture.Name == "en-US")
+                {
+                    InputLanguage.CurrentInputLanguage = lang;
+                    break;
+                }
+            }
+        }
+
+        private void txtCouple_Leave(object sender, EventArgs e)
+        {
+            if (previousLanguage != null)
+            {
+                InputLanguage.CurrentInputLanguage = previousLanguage;
+            }
+        }
+
+        private void txtcount_Click(object sender, EventArgs e)
+        {
+            previousLanguage = InputLanguage.CurrentInputLanguage;
+
+            foreach (InputLanguage lang in InputLanguage.InstalledInputLanguages)
+            {
+                if (lang.Culture.Name == "en-US")
+                {
+                    InputLanguage.CurrentInputLanguage = lang;
+                    break;
+                }
+            }
+        }
+
+        private void txtcount_Leave(object sender, EventArgs e)
+        {
+            if (previousLanguage != null)
+            {
+                InputLanguage.CurrentInputLanguage = previousLanguage;
             }
         }
     }

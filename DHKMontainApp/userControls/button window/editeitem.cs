@@ -17,6 +17,7 @@ namespace DHKMontainApp.userControls.button_window
         public string productCount = "";
         public string producttype = "";
         public string productCouple = "";
+        InputLanguage previousLanguage;
 
 
         public editeitem(string name, string count, string type,string couple)
@@ -152,6 +153,62 @@ namespace DHKMontainApp.userControls.button_window
             {
                 e.SuppressKeyPress = true;
                 this.Close();
+            }
+        }
+
+        private void txtcount_TextChanged(object sender, EventArgs e)
+        {
+            // Optional: Force English every time text changes
+            InputLanguage english = InputLanguage.FromCulture(new System.Globalization.CultureInfo("en-US"));
+            if (english != null && InputLanguage.CurrentInputLanguage != english)
+            {
+                InputLanguage.CurrentInputLanguage = english;
+            }
+        }
+
+
+
+        private void txtcount_Click(object sender, EventArgs e)
+        {
+            previousLanguage = InputLanguage.CurrentInputLanguage;
+
+            foreach (InputLanguage lang in InputLanguage.InstalledInputLanguages)
+            {
+                if (lang.Culture.Name == "en-US")
+                {
+                    InputLanguage.CurrentInputLanguage = lang;
+                    break;
+                }
+            }
+        }
+
+        private void txtcount_Leave(object sender, EventArgs e)
+        {
+            if (previousLanguage != null)
+            {
+                InputLanguage.CurrentInputLanguage = previousLanguage;
+            }
+        }
+
+        private void txtcouple_Click(object sender, EventArgs e)
+        {
+            previousLanguage = InputLanguage.CurrentInputLanguage;
+
+            foreach (InputLanguage lang in InputLanguage.InstalledInputLanguages)
+            {
+                if (lang.Culture.Name == "en-US")
+                {
+                    InputLanguage.CurrentInputLanguage = lang;
+                    break;
+                }
+            }
+        }
+
+        private void txtcouple_Leave(object sender, EventArgs e)
+        {
+            if (previousLanguage != null)
+            {
+                InputLanguage.CurrentInputLanguage = previousLanguage;
             }
         }
     }

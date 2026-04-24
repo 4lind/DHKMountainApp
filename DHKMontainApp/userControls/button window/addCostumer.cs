@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Data.SqlClient;
 using System.Windows.Forms;
+using System.Data.SQLite;
+
 
 namespace DHKMontainApp.userControls.button_window
 {
@@ -32,7 +33,7 @@ namespace DHKMontainApp.userControls.button_window
             {
                 Database.Open();
 
-                SqlCommand cmd = new SqlCommand(
+                SQLiteCommand cmd = new SQLiteCommand(
                     "INSERT INTO customer (cName, cPhone, Address, Company) VALUES (@name, @phone, @address, @company)",
                     Database.con
                 );

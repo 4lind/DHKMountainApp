@@ -1,63 +1,48 @@
-﻿using DHKMontainApp.userControls.button_window;
+﻿using System.Data.SQLite;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Data.SqlClient;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using DHKMontainApp.userControls.button_window;
 
 namespace DHKMontainApp.userControls
 {
     public partial class items : UserControl
     {
-        DataTable itemsTable; // global variable
+        DataTable itemsTable;
 
         public items()
         {
             InitializeComponent();
             LoadItems();
             buttonR.MakeButtonRounded(btn_refresh, 20);
-
         }
 
         private void btn_addItems_Click(object sender, EventArgs e)
         {
             using (var add = new additems())
             {
-                var result = add.ShowDialog();
-
-                if (result == DialogResult.OK)
-                {
-                    LoadItems(); 
-                }
+                if (add.ShowDialog() == DialogResult.OK)
+                    LoadItems();
             }
         }
-
 
         public void LoadItems()
         {
             Database.Close();
             Database.Open();
 
-            SqlDataAdapter da = new SqlDataAdapter(
-                "SELECT id,productName,producttype,productCount,productCouple FROM Product",
-                Database.con
-            );
-
-            itemsTable = new DataTable();
-            da.Fill(itemsTable);
-
-            dataGridView1.DataSource = itemsTable;
+            string query = "SELECT id, productName, producttype, productCount, productCouple FROM Product";
+            using (var da = new SQLiteDataAdapter(query, Database.con))
+            {
+                itemsTable = new DataTable();
+                da.Fill(itemsTable);
+                dataGridView1.DataSource = itemsTable;
+            }
 
             StyleDataGrid(dataGridView1);
-
             Database.Close();
         }
-
 
 
         public static void StyleDataGrid(DataGridView dgv)
@@ -85,6 +70,12 @@ namespace DHKMontainApp.userControls
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
             dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 12, FontStyle.Bold);
             dgv.ColumnHeadersDefaultCellStyle.Padding = new Padding(5);
+
+
+            dgv.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            
+            
             dgv.ColumnHeadersHeight = 45;
             dgv.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.EnableResizing;
 
@@ -101,21 +92,20 @@ namespace DHKMontainApp.userControls
                 dgv.Columns["id"].HeaderText = "المعرف";
 
             if (dgv.Columns.Contains("productName"))
-                dgv.Columns["productName"].HeaderText = "اسم أغراض";
+                dgv.Columns["productName"].HeaderText = "اسم منتج";
 
             if (dgv.Columns.Contains("producttype"))
-                dgv.Columns["producttype"].HeaderText = "نوع أغراض";
+                dgv.Columns["producttype"].HeaderText = "نوع";
 
             if (dgv.Columns.Contains("productCouple"))
-                dgv.Columns["productCouple"].HeaderText = "زوج";
+                dgv.Columns["productCouple"].HeaderText = "زوج من كرتون";
 
             if (dgv.Columns.Contains("productCount"))
-                dgv.Columns["productCount"].HeaderText = "عدد أغراض";
+                dgv.Columns["productCount"].HeaderText = "عدد كرتون";
 
 
 
         }
-
 
         private void btn_remove_Click(object sender, EventArgs e)
         {
@@ -125,34 +115,23 @@ namespace DHKMontainApp.userControls
                 return;
             }
 
-            // Get the ID of the selected product
             int id = Convert.ToInt32(dataGridView1.SelectedRows[0].Cells["id"].Value);
-
-            // Confirm deletion
-            DialogResult confirm = MessageBox.Show(
-                "هل أنت متأكد من حذف هذا المنتج؟",
-                "تأكيد الحذف",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning
-            );
+            DialogResult confirm = MessageBox.Show("هل أنت متأكد من حذف هذا المنتج؟", "تأكيد الحذف",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
             if (confirm == DialogResult.Yes)
             {
                 try
                 {
                     Database.Open();
-
                     string query = "DELETE FROM Product WHERE id = @id";
-                    SqlCommand cmd = new SqlCommand(query, Database.con);
-                    cmd.Parameters.AddWithValue("@id", id);
-
-                    cmd.ExecuteNonQuery();
-
+                    using (var cmd = new SQLiteCommand(query, Database.con))
+                    {
+                        cmd.Parameters.AddWithValue("@id", id);
+                        cmd.ExecuteNonQuery();
+                    }
                     Database.Close();
-
                     MessageBox.Show("تم حذف المنتج بنجاح!", "نجاح", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                    // Reload DataGrid
                     LoadItems();
                 }
                 catch (Exception ex)
@@ -160,21 +139,15 @@ namespace DHKMontainApp.userControls
                     MessageBox.Show("حدث خطأ: " + ex.Message, "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
-
         }
 
-        //searcha itema
         private void txtSearch_TextChanged(object sender, EventArgs e)
         {
             if (itemsTable == null) return;
-
             string s = txtSearch.Text.Replace("'", "''");
-
-            itemsTable.DefaultView.RowFilter =
-                $"productName LIKE '%{s}%' ";
+            itemsTable.DefaultView.RowFilter = $"productName LIKE '%{s}%'";
         }
 
-        //edite krna itema
         private void btnedite_Click(object sender, EventArgs e)
         {
             try
@@ -185,14 +158,12 @@ namespace DHKMontainApp.userControls
                     return;
                 }
 
-                // Get old values
                 string oldName = dataGridView1.CurrentRow.Cells["productName"].Value.ToString();
                 string oldCount = dataGridView1.CurrentRow.Cells["productCount"].Value.ToString();
                 string oldType = dataGridView1.CurrentRow.Cells["producttype"].Value.ToString();
                 string oldcouple = dataGridView1.CurrentRow.Cells["productCouple"].Value.ToString();
 
-                // Open edit form
-                editeitem editForm = new editeitem(oldName, oldCount, oldType, oldcouple);
+                var editForm = new editeitem(oldName, oldCount, oldType, oldcouple);
                 if (editForm.ShowDialog() == DialogResult.OK)
                 {
                     string newName = editForm.productName;
@@ -200,71 +171,45 @@ namespace DHKMontainApp.userControls
                     string newType = editForm.producttype;
                     string newcouple = editForm.productCouple;
 
-                    // Validate count and couple are integers
-                    try
+                    if (!int.TryParse(newCount, out _) || !int.TryParse(newcouple, out _))
                     {
-                        int countValue = int.Parse(newCount);
-                    }
-                    catch
-                    {
-                        MessageBox.Show("القيمة في حقل 'العدد' غير صحيحة. يجب أن تكون رقماً صحيحاً.",
-                            "خطأ في الإدخال", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-
-                    try
-                    {
-                        int coupleValue = int.Parse(newcouple);
-                    }
-                    catch
-                    {
-                        MessageBox.Show("القيمة في حقل 'الزوجي' غير صحيحة. يجب أن تكون رقماً صحيحاً.",
-                            "خطأ في الإدخال", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        MessageBox.Show("العدد والزوجي يجب أن يكونا أرقاماً صحيحة.", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
 
                     Database.Open();
-
-                    SqlCommand cmd = new SqlCommand(@"
-                UPDATE Product
-                SET productName   = @newName,
-                    productCount  = @newCount,
-                    producttype   = @newType,
-                    productCouple = @newcouple
-                WHERE productName   = @oldName 
-                  AND productCount  = @oldCount 
-                  AND producttype   = @oldType
-                  AND productCouple = @oldcouple
-            ", Database.con);
-
-                    cmd.Parameters.AddWithValue("@newName", newName);
-                    cmd.Parameters.AddWithValue("@newCount", newCount);
-                    cmd.Parameters.AddWithValue("@newType", newType);
-                    cmd.Parameters.AddWithValue("@newcouple", newcouple);
-
-                    cmd.Parameters.AddWithValue("@oldName", oldName);
-                    cmd.Parameters.AddWithValue("@oldCount", oldCount);
-                    cmd.Parameters.AddWithValue("@oldType", oldType);
-                    cmd.Parameters.AddWithValue("@oldcouple", oldcouple);
-
-                    cmd.ExecuteNonQuery();
+                    string updateQuery = @"
+                        UPDATE Product
+                        SET productName = @newName,
+                            productCount = @newCount,
+                            producttype = @newType,
+                            productCouple = @newcouple
+                        WHERE productName = @oldName 
+                          AND productCount = @oldCount 
+                          AND producttype = @oldType
+                          AND productCouple = @oldcouple";
+                    using (var cmd = new SQLiteCommand(updateQuery, Database.con))
+                    {
+                        cmd.Parameters.AddWithValue("@newName", newName);
+                        cmd.Parameters.AddWithValue("@newCount", newCount);
+                        cmd.Parameters.AddWithValue("@newType", newType);
+                        cmd.Parameters.AddWithValue("@newcouple", newcouple);
+                        cmd.Parameters.AddWithValue("@oldName", oldName);
+                        cmd.Parameters.AddWithValue("@oldCount", oldCount);
+                        cmd.Parameters.AddWithValue("@oldType", oldType);
+                        cmd.Parameters.AddWithValue("@oldcouple", oldcouple);
+                        cmd.ExecuteNonQuery();
+                    }
                     Database.Close();
-
                     LoadItems();
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"حدث خطأ أثناء التعديل: {ex.Message}",
-                    "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"حدث خطأ أثناء التعديل: {ex.Message}", "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-
-        private void btn_refresh_Click(object sender, EventArgs e)
-        {
-            LoadItems();
-        }
-
+        private void btn_refresh_Click(object sender, EventArgs e) => LoadItems();
     }
 }

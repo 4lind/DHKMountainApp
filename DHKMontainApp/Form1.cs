@@ -12,9 +12,12 @@ namespace DHKMontainApp
         // Cached UserControls (created once)
         private homeviewPage homeUC;
         private UserControl costumerUC;
-        private payment paymentUC;
+        private Receipt ReceiptUC;
         private UserControl itemsUC;
         private sales salesUC;
+        private Buy BuyUC;
+        private Purchased PurchasedUC;
+
 
         // Track current page
         private UserControl currentPage;
@@ -35,9 +38,11 @@ namespace DHKMontainApp
             // Rest of your code remains the same...
             homeUC = new homeviewPage();
             costumerUC = new costumers();
-            paymentUC = new payment();
+            ReceiptUC = new Receipt();
             itemsUC = new items();
             salesUC = new sales();
+            BuyUC = new Buy();
+            PurchasedUC= new Purchased();
 
             homeUC.NavigateRequested += HomePage_NavigateRequested;
             LoadPage(homeUC);
@@ -93,9 +98,12 @@ namespace DHKMontainApp
         {
             btn_Home.BackColor = default;
             btn_costumer.BackColor = default;
-            btn_payment.BackColor = default;
+            btn_buy.BackColor = default;
             btn_item.BackColor = default;
             btn_sale.BackColor = default;
+            btn_paid.BackColor = default;
+            btn_payment.BackColor = default;
+
         }
 
         /* ===================== BUTTON EVENTS ===================== */
@@ -116,13 +124,7 @@ namespace DHKMontainApp
             LoadPage(costumerUC);
         }
 
-        private void btn_payment_Click(object sender, EventArgs e)
-        {
-            ResetButtons();
-            btn_payment.BackColor = Color.FromArgb(50, 52, 120);
-            lbl_dashboard.Text = btn_payment.Text;
-            LoadPage(paymentUC);
-        }
+
 
         private void btn_item_Click(object sender, EventArgs e)
         {
@@ -144,6 +146,41 @@ namespace DHKMontainApp
             LoadPage(salesUC);
         }
 
+        private void btn_payment_Click_1(object sender, EventArgs e)
+        {
+            ResetButtons();
+            btn_payment.BackColor = Color.FromArgb(50, 52, 120);
+            lbl_dashboard.Text = btn_payment.Text;
+
+            LoadPage(ReceiptUC);
+        }
+
+        private void btn_buy_Click(object sender, EventArgs e)
+        {
+            ResetButtons();
+            btn_buy.BackColor = Color.FromArgb(50, 52, 120);
+            lbl_dashboard.Text = btn_buy.Text;
+
+            LoadPage(BuyUC);
+        }
+
+        private void btn_paid_Click(object sender, EventArgs e)
+        {
+            ResetButtons();
+
+            btn_paid.BackColor = Color.FromArgb(50, 52, 120);
+            lbl_dashboard.Text = btn_paid.Text;
+            LoadPage(PurchasedUC);
+
+        }
+
+        private void btnSetting_Click(object sender, EventArgs e)
+        {
+            SettingForm settingForm = new SettingForm();
+            settingForm.ShowDialog();
+        }
+
+
         /* ===================== HOME SHORTCUTS ===================== */
 
         private void HomePage_NavigateRequested(object sender, string pageName)
@@ -161,16 +198,20 @@ namespace DHKMontainApp
                     }
                     break;
 
-                case "items":
-                    using (var f = new additems())
-                    {
-                        f.ShowDialog();
-                    }
-                    break;
-
                 case "sales":
                     btn_sale.PerformClick();
                     break;
+
+                case "items":
+                    btn_buy.PerformClick();
+
+                    break;
+                case "purchased":
+                    btn_paid.PerformClick();
+
+                    break;
+
+
             }
         }
 
@@ -182,15 +223,17 @@ namespace DHKMontainApp
 
             homeUC?.Dispose();
             costumerUC?.Dispose();
-            paymentUC?.Dispose();
+            ReceiptUC?.Dispose();
             itemsUC?.Dispose();
             salesUC?.Dispose();
+            BuyUC?.Dispose();
+            PurchasedUC?.Dispose();
         }
 
-        private void btnSetting_Click(object sender, EventArgs e)
-        {
-            SettingForm settingForm = new SettingForm();
-            settingForm.ShowDialog();
-        }
+
+
+
+
+
     }
 }

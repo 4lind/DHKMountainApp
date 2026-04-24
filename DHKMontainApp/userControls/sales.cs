@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
+using System.Data.SQLite;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -17,23 +17,17 @@ namespace DHKMontainApp.userControls
         private DataTable itemsDataTable;
         private string dhkReceiptFolder;
         private string excelTemplatePath;
-        //private string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
 
         public sales()
         {
             InitializeComponent();
 
-            // Initialize folder paths
             dhkReceiptFolder = Properties.Settings.Default.SaveFolderPath;
-            //excelTemplatePath = Path.Combine(Application.StartupPath, "DONT-CHANGE-THIS.xlsx");
             excelTemplatePath = Path.Combine(Application.StartupPath, "DONT-CHANGE-THIS.xlsx");
-
 
             SetupDataGridViews();
             LoadSalesData();
             SetDefaultDates();
-
-            // Ensure folder exists
             EnsureFolderExists();
         }
 
@@ -59,190 +53,6 @@ namespace DHKMontainApp.userControls
             dtpToDate.Value = DateTime.Now;
             dtpFromDate.Value = DateTime.Now.AddDays(-30);
         }
-        private void SetupDataGridViews()
-        {
-            // Setup Sales DataGridView columns
-            dataGridViewSales.AutoGenerateColumns = false;
-            dataGridViewSales.Columns.Clear();
-
-            // Add columns
-            dataGridViewSales.Columns.Add("ReceiptID", "رقم الفاتورة");
-            dataGridViewSales.Columns.Add("CustomerName", "اسم الزبون");
-            dataGridViewSales.Columns.Add("CustomerID", "رقم الزبون");
-            dataGridViewSales.Columns.Add("ReceiptDate", "تاريخ الفاتورة");
-            dataGridViewSales.Columns.Add("TotalCartons", "إجمالي الكراتين");
-            dataGridViewSales.Columns.Add("TotalPairs", "إجمالي الأزواج");
-            dataGridViewSales.Columns.Add("TotalAmount", "المبلغ الإجمالي");
-            dataGridViewSales.Columns.Add("Currency", "العملة");
-
-            // Format columns
-            dataGridViewSales.Columns["TotalAmount"].DefaultCellStyle.Format = "N2";
-            dataGridViewSales.Columns["ReceiptDate"].DefaultCellStyle.Format = "yyyy/MM/dd";
-
-            // Setup Items DataGridView columns
-            dataGridViewItems.AutoGenerateColumns = false;
-            dataGridViewItems.Columns.Clear();
-
-            dataGridViewItems.Columns.Add("ProductName", "اسم المنتج");
-            dataGridViewItems.Columns.Add("Cartons", "الكراتين");
-            dataGridViewItems.Columns.Add("PairsPerCarton", "أزواج/كرتون");
-            dataGridViewItems.Columns.Add("UnitPrice", "سعر الزوج");
-            dataGridViewItems.Columns.Add("ItemTotal", "المبلغ الإجمالي");
-            dataGridViewItems.Columns.Add("RowNumber", "رقم الصف");
-
-            // Format columns
-            dataGridViewItems.Columns["UnitPrice"].DefaultCellStyle.Format = "N2";
-            dataGridViewItems.Columns["ItemTotal"].DefaultCellStyle.Format = "N2";
-
-            // Apply styling
-            StyleDataGrid(dataGridViewSales);
-            StyleDataGrid(dataGridViewItems);
-
-            // Set up selection changed event
-            dataGridViewSales.SelectionChanged += DataGridViewSales_SelectionChanged;
-
-        }
-
-
-        private void dataGridViewSales_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
-        {
-            // Check if the double-click is on a valid row (not header)
-            if (e.RowIndex < 0 || e.RowIndex >= dataGridViewSales.Rows.Count)
-                return;
-
-            // Get the ReceiptID from the clicked row
-            var receiptID = dataGridViewSales.Rows[e.RowIndex].Cells["ReceiptID"].Value?.ToString();
-
-            if (!string.IsNullOrEmpty(receiptID))
-            {
-                try
-                {
-                    // Copy to clipboard
-                    Clipboard.SetText(receiptID);
-
-                    // Show a brief notification to the user
-                    // You can use a ToolTip, StatusStrip, or a small message box
-                    MessageBox.Show($"تم نسخ رقم الفاتورة: {receiptID} إلى الحافظة",
-                        "تم النسخ",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information);
-
-                    // Alternative: You could use a ToolTip for a less intrusive notification
-                    // toolTip.Show($"تم نسخ رقم الفاتورة: {receiptID}", dataGridViewSales, 2000);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"خطأ في النسخ: {ex.Message}", "خطأ",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-
-        // Search timer event handler
-        private void SearchTimer_Tick(object sender, EventArgs e)
-        {
-            searchTimer.Stop();
-            PerformSearch();
-        }
-
-        // Text changed event for customer search
-        private void TxtCustomerSearch_TextChanged(object sender, EventArgs e)
-        {
-            // Restart the timer when text changes
-            searchTimer.Stop();
-            searchTimer.Start();
-        }
-
-        // Date picker value changed event
-        private void DatePicker_ValueChanged(object sender, EventArgs e)
-        {
-            // Restart the timer when date changes
-            searchTimer.Stop();
-            searchTimer.Start();
-        }
-
-        // Perform the actual search
-        private void PerformSearch()
-        {
-            try
-            {
-                Database.Open();
-
-                StringBuilder query = new StringBuilder();
-                query.Append(@"SELECT ReceiptID, CustomerName, CustomerID, 
-                             ReceiptDate, TotalCartons, TotalPairs, 
-                             TotalAmount, Currency, FilePath 
-                             FROM Receipts 
-                             WHERE 1=1");
-
-                List<SqlParameter> parameters = new List<SqlParameter>();
-
-                // Add customer name/ID filter
-                if (!string.IsNullOrWhiteSpace(txtCustomerSearch.Text))
-                {
-                    query.Append(" AND (CustomerName LIKE @CustomerName OR CustomerID LIKE @CustomerID OR ReceiptID = @ReceiptID)");
-                    parameters.Add(new SqlParameter("@CustomerName", "%" + txtCustomerSearch.Text + "%"));
-                    parameters.Add(new SqlParameter("@CustomerID", "%" + txtCustomerSearch.Text + "%"));
-                    parameters.Add(new SqlParameter("@ReceiptID", txtCustomerSearch.Text ));
-
-                }
-
-                // Add date range filters
-                query.Append(" AND ReceiptDate >= @FromDate");
-                parameters.Add(new SqlParameter("@FromDate", dtpFromDate.Value.Date));
-
-                query.Append(" AND ReceiptDate <= @ToDate");
-                parameters.Add(new SqlParameter("@ToDate", dtpToDate.Value.Date.AddDays(1).AddSeconds(-1)));
-
-                query.Append(" ORDER BY ReceiptDate DESC");
-
-                SqlDataAdapter adapter = new SqlDataAdapter(query.ToString(), Database.con);
-                foreach (var param in parameters)
-                {
-                    adapter.SelectCommand.Parameters.Add(param);
-                }
-
-                salesDataTable = new DataTable();
-                adapter.Fill(salesDataTable);
-
-                // Clear and populate the DataGridView
-                dataGridViewSales.Rows.Clear();
-
-                foreach (DataRow row in salesDataTable.Rows)
-                {
-                    dataGridViewSales.Rows.Add(
-                        row["ReceiptID"],
-                        row["CustomerName"],
-                        row["CustomerID"],
-                        Convert.ToDateTime(row["ReceiptDate"]).ToString("yyyy/MM/dd"),
-                        row["TotalCartons"],
-                        row["TotalPairs"],
-                        Convert.ToDecimal(row["TotalAmount"]).ToString("N2"),
-                        row["Currency"]
-                    );
-                }
-
-                UpdateSummary();
-
-
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"خطأ في البحث: {ex.Message}", "خطأ",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            finally
-            {
-                Database.Close();
-            }
-        }
-
-        // Original btnSearch_Click - now calls PerformSearch
-        private void btnSearch_Click(object sender, EventArgs e)
-        {
-            searchTimer.Stop(); // Stop timer first
-            PerformSearch();
-        }
 
         public static void StyleDataGrid(DataGridView dgv)
         {
@@ -253,7 +63,7 @@ namespace DHKMontainApp.userControls
             dgv.BorderStyle = BorderStyle.None;
             dgv.BackgroundColor = Color.FromArgb(28, 32, 52);
             dgv.GridColor = Color.FromArgb(45, 50, 72);
-
+            
             dgv.RowTemplate.Height = 40;
             dgv.DefaultCellStyle.BackColor = Color.FromArgb(33, 38, 62);
             dgv.DefaultCellStyle.ForeColor = Color.White;
@@ -273,7 +83,7 @@ namespace DHKMontainApp.userControls
             dgv.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 12, FontStyle.Bold);
             dgv.ColumnHeadersDefaultCellStyle.Padding = new Padding(5, 2, 5, 2);
             dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-            dgv.ColumnHeadersHeight = 45;
+            dgv.ColumnHeadersHeight = 50;
 
             dgv.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
             dgv.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
@@ -284,6 +94,194 @@ namespace DHKMontainApp.userControls
 
             dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
+        private void SetupDataGridViews()
+        {
+            // ========== dataGridViewSales ==========
+            dataGridViewSales.AutoGenerateColumns = false;
+            dataGridViewSales.Columns.Clear();
+
+            // Add a new "رقم" column at the beginning (it will become the rightmost column because of RightToLeft)
+            DataGridViewTextBoxColumn colRowNum = new DataGridViewTextBoxColumn();
+            colRowNum.Name = "RowNum";
+            colRowNum.HeaderText = "تسلسل";
+            colRowNum.Width = 60;
+            colRowNum.ReadOnly = true;
+            dataGridViewSales.Columns.Add(colRowNum);
+
+            // Existing columns
+            dataGridViewSales.Columns.Add("ReceiptID", "رقم الفاتورة");
+            dataGridViewSales.Columns.Add("CustomerName", "اسم الزبون");
+            dataGridViewSales.Columns.Add("CustomerID", "المعرف");
+            dataGridViewSales.Columns.Add("ReceiptDate", "تاريخ الفاتورة");
+            dataGridViewSales.Columns.Add("TotalCartons", "إجمالي الكراتين");
+            dataGridViewSales.Columns.Add("TotalPairs", "إجمالي الأزواج");
+            dataGridViewSales.Columns.Add("TotalAmount", "المبلغ الإجمالي");
+            dataGridViewSales.Columns.Add("Currency", "العملة");
+
+            dataGridViewSales.Columns["TotalAmount"].DefaultCellStyle.Format = "N2";
+            dataGridViewSales.Columns["ReceiptDate"].DefaultCellStyle.Format = "yyyy/MM/dd";
+            dataGridViewSales.Columns["RowNum"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+
+            // ========== dataGridViewItems ==========
+            dataGridViewItems.AutoGenerateColumns = false;
+            dataGridViewItems.Columns.Clear();
+
+            dataGridViewItems.Columns.Add("ProductName", "اسم المنتج");
+            dataGridViewItems.Columns.Add("Cartons", "عـدد الكراتين");
+            dataGridViewItems.Columns.Add("PairsPerCarton", "عـدد ازواج");
+            dataGridViewItems.Columns.Add("UnitPrice", "سعر الزوج");
+            dataGridViewItems.Columns.Add("ItemTotal", "المبلغ الإجمالي");
+            dataGridViewItems.Columns.Add("RowNumber", "تسلسل");
+
+            dataGridViewItems.Columns["UnitPrice"].DefaultCellStyle.Format = "N2";
+            dataGridViewItems.Columns["ItemTotal"].DefaultCellStyle.Format = "N2";
+
+            // Make the "RowNumber" column the rightmost one
+            dataGridViewItems.Columns["RowNumber"].DisplayIndex = 0;
+            dataGridViewItems.Columns["RowNumber"].Width = 60;
+
+
+            StyleDataGrid(dataGridViewSales);
+            StyleDataGrid(dataGridViewItems);
+
+            dataGridViewSales.SelectionChanged += DataGridViewSales_SelectionChanged;
+        }
+
+        private void dataGridViewSales_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0 || e.RowIndex >= dataGridViewSales.Rows.Count)
+                return;
+
+            var receiptID = dataGridViewSales.Rows[e.RowIndex].Cells["ReceiptID"].Value?.ToString();
+
+            if (!string.IsNullOrEmpty(receiptID))
+            {
+                try
+                {
+                    Clipboard.SetText(receiptID);
+                    MessageBox.Show($"تم نسخ رقم الفاتورة: {receiptID} إلى الحافظة",
+                        "تم النسخ",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"خطأ في النسخ: {ex.Message}", "خطأ",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void SearchTimer_Tick(object sender, EventArgs e)
+        {
+            searchTimer.Stop();
+            PerformSearch();
+        }
+
+        private void TxtCustomerSearch_TextChanged(object sender, EventArgs e)
+        {
+            searchTimer.Stop();
+            searchTimer.Start();
+        }
+
+        private void DatePicker_ValueChanged(object sender, EventArgs e)
+        {
+            searchTimer.Stop();
+            searchTimer.Start();
+        }
+
+
+        private void PerformSearch()
+        {
+            try
+            {
+                Database.Open();
+
+                StringBuilder query = new StringBuilder();
+                query.Append(@"SELECT ReceiptID, CustomerName, CustomerID, 
+                     ReceiptDate, TotalCartons, TotalPairs, 
+                     TotalAmount, Currency, FilePath 
+                     FROM Receipts 
+                     WHERE 1=1");
+
+                List<SQLiteParameter> parameters = new List<SQLiteParameter>();
+
+                if (!string.IsNullOrWhiteSpace(txtCustomerSearch.Text))
+                {
+                    query.Append(" AND (CustomerName LIKE @CustomerName OR CustomerID LIKE @CustomerID OR ReceiptID = @ReceiptID)");
+                    parameters.Add(new SQLiteParameter("@CustomerName", "%" + txtCustomerSearch.Text + "%"));
+                    parameters.Add(new SQLiteParameter("@CustomerID", "%" + txtCustomerSearch.Text + "%"));
+                    parameters.Add(new SQLiteParameter("@ReceiptID", txtCustomerSearch.Text));
+                }
+
+                query.Append(" AND ReceiptDate >= @FromDate");
+                parameters.Add(new SQLiteParameter("@FromDate", dtpFromDate.Value.Date.ToString("yyyy-MM-dd HH:mm:ss")));
+
+                query.Append(" AND ReceiptDate <= @ToDate");
+                parameters.Add(new SQLiteParameter("@ToDate", dtpToDate.Value.Date.AddDays(1).AddSeconds(-1).ToString("yyyy-MM-dd HH:mm:ss")));
+
+                query.Append(" ORDER BY ReceiptDate DESC");
+
+                using (var cmd = new SQLiteCommand(query.ToString(), Database.con))
+                {
+                    cmd.Parameters.AddRange(parameters.ToArray());
+                    using (var da = new SQLiteDataAdapter(cmd))
+                    {
+                        salesDataTable = new DataTable();
+                        da.Fill(salesDataTable);
+                    }
+                }
+
+                dataGridViewSales.Rows.Clear();
+
+                int rowIndex = 1;   // start numbering from 1
+                foreach (DataRow row in salesDataTable.Rows)
+                {
+                    string customerIdDisplay = row["CustomerID"] == DBNull.Value ? "-" : row["CustomerID"].ToString();
+
+                    dataGridViewSales.Rows.Add(
+                        rowIndex.ToString(),                        // Row number (تسلسل)
+                        row["ReceiptID"],
+                        row["CustomerName"],
+                        customerIdDisplay,
+                        Convert.ToDateTime(row["ReceiptDate"]).ToString("yyyy/MM/dd"),
+                        row["TotalCartons"],
+                        row["TotalPairs"],
+                        Convert.ToDecimal(row["TotalAmount"]).ToString("N2"),
+                        row["Currency"]
+                    );
+                    rowIndex++;
+                }
+
+                UpdateSummary();
+
+                dataGridViewSales.ClearSelection();
+                dataGridViewItems.Rows.Clear();
+                lblTotalAmount.Text = "0.00$";
+                if (itemsDataTable != null)
+                    itemsDataTable.Clear();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"خطأ في البحث: {ex.Message}", "خطأ",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Database.Close();
+            }
+        }
+
+
+        private void btnSearch_Click(object sender, EventArgs e)
+        {
+            searchTimer.Stop();
+            PerformSearch();
+        }
+
+
+
+
 
         public void LoadSalesData()
         {
@@ -291,34 +289,54 @@ namespace DHKMontainApp.userControls
             {
                 Database.Open();
 
-                string query = @"SELECT ReceiptID, CustomerName, CustomerID, 
-                                ReceiptDate, TotalCartons, TotalPairs, 
-                                TotalAmount, Currency, FilePath
-                                FROM Receipts 
-                                ORDER BY ReceiptDate DESC";
+                string query = @"
+            SELECT 
+                ReceiptID, 
+                CustomerName, 
+                CustomerID,
+                ReceiptDate, 
+                TotalCartons, 
+                TotalPairs, 
+                TotalAmount, 
+                Currency, 
+                FilePath
+            FROM Receipts 
+            ORDER BY ReceiptDate DESC";
 
-                SqlDataAdapter adapter = new SqlDataAdapter(query, Database.con);
-                salesDataTable = new DataTable();
-                adapter.Fill(salesDataTable);
+                using (var adapter = new SQLiteDataAdapter(query, Database.con))
+                {
+                    salesDataTable = new DataTable();
+                    adapter.Fill(salesDataTable);
+                }
 
-                // Clear and populate the DataGridView
                 dataGridViewSales.Rows.Clear();
 
+                int rowIndex = 1;
                 foreach (DataRow row in salesDataTable.Rows)
                 {
                     dataGridViewSales.Rows.Add(
+                        rowIndex.ToString(),                               // Row number
                         row["ReceiptID"],
                         row["CustomerName"],
-                        row["CustomerID"],
+                        row["CustomerID"] == DBNull.Value ? "NULL" : row["CustomerID"].ToString(),
                         Convert.ToDateTime(row["ReceiptDate"]).ToString("yyyy/MM/dd"),
                         row["TotalCartons"],
                         row["TotalPairs"],
                         Convert.ToDecimal(row["TotalAmount"]).ToString("N2"),
                         row["Currency"]
                     );
+                    rowIndex++;
                 }
 
                 UpdateSummary();
+
+
+                // ---- NEW LINES ----
+                dataGridViewSales.ClearSelection();
+                dataGridViewItems.Rows.Clear();
+                lblTotalAmount.Text = "0.00$";
+                if (itemsDataTable != null)
+                    itemsDataTable.Clear();
             }
             catch (Exception ex)
             {
@@ -331,6 +349,7 @@ namespace DHKMontainApp.userControls
             }
         }
 
+
         private void DataGridViewSales_SelectionChanged(object sender, EventArgs e)
         {
             if (dataGridViewSales.SelectedRows.Count > 0)
@@ -338,8 +357,17 @@ namespace DHKMontainApp.userControls
                 string receiptID = dataGridViewSales.SelectedRows[0].Cells["ReceiptID"].Value?.ToString();
                 if (!string.IsNullOrEmpty(receiptID))
                 {
-                    LoadReceiptItems(receiptID);
+                    LoadReceiptItems(receiptID);          // fills itemsDataTable and dataGridViewItems
+                    UpdateSelectedTotal();                 // NEW: update lblTotalAmount from items
                 }
+            }
+            else
+            {
+                // No row selected: clear items and reset label
+                dataGridViewItems.Rows.Clear();
+                lblTotalAmount.Text = "0.00$";
+                if (itemsDataTable != null)
+                    itemsDataTable.Clear();
             }
         }
 
@@ -355,13 +383,16 @@ namespace DHKMontainApp.userControls
                                 WHERE ReceiptID = @ReceiptID 
                                 ORDER BY RowNumber";
 
-                SqlDataAdapter adapter = new SqlDataAdapter(query, Database.con);
-                adapter.SelectCommand.Parameters.AddWithValue("@ReceiptID", receiptID);
+                using (var cmd = new SQLiteCommand(query, Database.con))
+                {
+                    cmd.Parameters.AddWithValue("@ReceiptID", receiptID);
+                    using (var da = new SQLiteDataAdapter(cmd))
+                    {
+                        itemsDataTable = new DataTable();
+                        da.Fill(itemsDataTable);
+                    }
+                }
 
-                itemsDataTable = new DataTable();
-                adapter.Fill(itemsDataTable);
-
-                // Clear and populate the DataGridView
                 dataGridViewItems.Rows.Clear();
 
                 foreach (DataRow row in itemsDataTable.Rows)
@@ -391,52 +422,32 @@ namespace DHKMontainApp.userControls
         {
             if (salesDataTable != null && salesDataTable.Rows.Count > 0)
             {
-                // Calculate total sales count
                 lblTotalSales.Text = salesDataTable.Rows.Count.ToString();
-
-                // Calculate total amount
-                decimal totalAmount = 0;
-                foreach (DataRow row in salesDataTable.Rows)
-                {
-                    if (row["TotalAmount"] != DBNull.Value)
-                    {
-                        totalAmount += Convert.ToDecimal(row["TotalAmount"]);
-                    }
-                }
-
-                lblTotalAmount.Text = totalAmount.ToString("N2") + "$";
             }
             else
             {
                 lblTotalSales.Text = "0";
-                lblTotalAmount.Text = "0.00";
             }
         }
 
+
         private void FillTemplateHeaders(ExcelWorksheet worksheet, string receiptId, string customerName, DateTime receiptDate)
         {
-            // Find and replace placeholders in template
-
-            worksheet.Cells[7, 2].Value = receiptDate.ToString("dd/MM/yyyy"); // B8
-            worksheet.Cells[7, 4].Value = customerName; // E8
-
-            // Row 9: receiptID (cell D9)
-            worksheet.Cells[8, 2].Value = receiptId; // B9
+            worksheet.Cells[7, 2].Value = receiptDate.ToString("yyyy/MM/dd");
+            worksheet.Cells[7, 4].Value = customerName;
+            worksheet.Cells[8, 2].Value = receiptId;
         }
 
-        private void FillTemplateItems(ExcelWorksheet worksheet, SqlDataReader itemsReader)
+        private void FillTemplateItems(ExcelWorksheet worksheet, SQLiteDataReader itemsReader)
         {
-            // Items start from row 11 (index 10) to row 35 (index 34)
             int startRow = 10;
-            int maxRows = 25; // From row 11 to 35 = 25 rows
+            int maxRows = 25;
 
-            // Clear existing data from rows 11-35
             for (int row = startRow; row < startRow + maxRows; row++)
             {
-                for (int col = 0; col < 8; col++) // Columns A-H
+                for (int col = 0; col < 8; col++)
                 {
                     worksheet.Cells[row, col].Value = "";
-                    // Clear borders
                     worksheet.Cells[row, col].Style.Borders.SetBorders(MultipleBorders.None,
                         SpreadsheetColor.FromName(ColorName.Black), LineStyle.None);
                 }
@@ -446,34 +457,22 @@ namespace DHKMontainApp.userControls
 
             while (itemsReader.Read() && currentRow < startRow + maxRows)
             {
-                // Get item data
                 string productName = itemsReader["ProductName"]?.ToString() ?? "";
                 decimal cartons = Convert.ToDecimal(itemsReader["Cartons"]);
                 decimal pairsPerCarton = Convert.ToDecimal(itemsReader["PairsPerCarton"]);
                 decimal unitPrice = Convert.ToDecimal(itemsReader["UnitPrice"]);
                 decimal itemTotal = Convert.ToDecimal(itemsReader["ItemTotal"]);
 
-                // Column B (index 1): المبلغ (Item Total)
                 worksheet.Cells[currentRow, 1].Value = itemTotal.ToString("N2");
-
-                // Column C (index 2): كارتون (Cartons)
                 worksheet.Cells[currentRow, 2].Value = cartons.ToString("N0");
-
-                // Column D (index 3): السعر الزوج (Unit Price)
                 worksheet.Cells[currentRow, 3].Value = unitPrice.ToString("N2");
-
-                // Column E (index 4): زوج (Pairs per Carton)
                 worksheet.Cells[currentRow, 4].Value = pairsPerCarton.ToString("N0");
-
-                // Column F (index 5): المادة (Product Name)
                 worksheet.Cells[currentRow, 5].Value = productName;
 
-                // Merge columns F, G, H for product name
                 var mergeRange = worksheet.Cells.GetSubrangeAbsolute(currentRow, 5, currentRow, 7);
                 mergeRange.Merged = true;
                 mergeRange.Style.HorizontalAlignment = HorizontalAlignmentStyle.Center;
 
-                // Apply borders to the row (columns B to H)
                 ApplyBordersToRow(worksheet, currentRow, 1, 7);
 
                 currentRow++;
@@ -497,7 +496,6 @@ namespace DHKMontainApp.userControls
         {
             try
             {
-                // Check if template exists
                 if (!File.Exists(excelTemplatePath))
                 {
                     MessageBox.Show($"ملف القالب غير موجود في المجلد:\n{excelTemplatePath}",
@@ -505,22 +503,19 @@ namespace DHKMontainApp.userControls
                     return null;
                 }
 
-                // Set GemBox license
                 SpreadsheetInfo.SetLicense("FREE-LIMITED-KEY");
 
-                // Get receipt data from database
                 Database.Open();
 
-                // 1. Get receipt header information
                 string receiptQuery = @"SELECT ReceiptID, CustomerName, CustomerID, 
                               ReceiptDate, TotalCartons, TotalPairs, 
                               TotalAmount, Currency, FilePath
                               FROM Receipts 
                               WHERE ReceiptID = @ReceiptID";
 
-                SqlCommand receiptCmd = new SqlCommand(receiptQuery, Database.con);
+                SQLiteCommand receiptCmd = new SQLiteCommand(receiptQuery, Database.con);
                 receiptCmd.Parameters.AddWithValue("@ReceiptID", receiptId);
-                SqlDataReader receiptReader = receiptCmd.ExecuteReader();
+                SQLiteDataReader receiptReader = receiptCmd.ExecuteReader();
 
                 if (!receiptReader.Read())
                 {
@@ -531,7 +526,6 @@ namespace DHKMontainApp.userControls
                     return null;
                 }
 
-                // Extract receipt data
                 string customerName = receiptReader["CustomerName"]?.ToString() ?? "";
                 DateTime receiptDate = Convert.ToDateTime(receiptReader["ReceiptDate"]);
                 decimal totalCartons = Convert.ToDecimal(receiptReader["TotalCartons"]);
@@ -541,25 +535,22 @@ namespace DHKMontainApp.userControls
 
                 receiptReader.Close();
 
-                // 2. Get receipt items count
                 string countQuery = @"SELECT COUNT(*) as ItemCount FROM ReceiptItems 
                             WHERE ReceiptID = @ReceiptID";
-                SqlCommand countCmd = new SqlCommand(countQuery, Database.con);
+                SQLiteCommand countCmd = new SQLiteCommand(countQuery, Database.con);
                 countCmd.Parameters.AddWithValue("@ReceiptID", receiptId);
                 int totalItems = Convert.ToInt32(countCmd.ExecuteScalar());
 
-                // 3. Get all receipt items
                 string itemsQuery = @"SELECT ProductName, Cartons, PairsPerCarton, 
                             UnitPrice, ItemTotal, RowNumber
                             FROM ReceiptItems 
                             WHERE ReceiptID = @ReceiptID 
                             ORDER BY RowNumber";
 
-                SqlCommand itemsCmd = new SqlCommand(itemsQuery, Database.con);
+                SQLiteCommand itemsCmd = new SQLiteCommand(itemsQuery, Database.con);
                 itemsCmd.Parameters.AddWithValue("@ReceiptID", receiptId);
-                SqlDataReader itemsReader = itemsCmd.ExecuteReader();
+                SQLiteDataReader itemsReader = itemsCmd.ExecuteReader();
 
-                // 4. Determine if we need multiple pages
                 int itemsPerPage = 25;
                 int totalPages = (int)Math.Ceiling((double)totalItems / itemsPerPage);
 
@@ -567,13 +558,11 @@ namespace DHKMontainApp.userControls
 
                 if (totalPages == 1)
                 {
-                    // Single page receipt
                     outputPath = CreateSinglePageReceipt(receiptId, customerName, receiptDate,
                         totalCartons, totalPairs, totalAmount, currency, itemsReader);
                 }
                 else
                 {
-                    // Multi-page receipt
                     outputPath = CreateMultiPageReceipt(receiptId, customerName, receiptDate,
                         totalCartons, totalPairs, totalAmount, currency, itemsReader,
                         totalItems, totalPages, itemsPerPage);
@@ -582,7 +571,6 @@ namespace DHKMontainApp.userControls
                 itemsReader.Close();
                 Database.Close();
 
-                // Update database with new file path
                 if (!string.IsNullOrEmpty(outputPath))
                 {
                     UpdateReceiptFilePath(receiptId, outputPath);
@@ -603,26 +591,17 @@ namespace DHKMontainApp.userControls
 
         private string CreateSinglePageReceipt(string receiptId, string customerName, DateTime receiptDate,
             decimal totalCartons, decimal totalPairs, decimal totalAmount, string currency,
-            SqlDataReader itemsReader)
+            SQLiteDataReader itemsReader)
         {
-            // Load template
             ExcelFile workbook = ExcelFile.Load(excelTemplatePath);
             ExcelWorksheet worksheet = workbook.Worksheets[0];
 
-            // Fill headers
             FillTemplateHeaders(worksheet, receiptId, customerName, receiptDate);
-
-            // Fill items
             FillTemplateItems(worksheet, itemsReader);
-
-            // Fill summary
             FillTemplateSummary(worksheet, totalCartons, totalPairs, totalAmount, currency);
-
-            // Add page numbering
             AddPageNumbering(worksheet, 1, 1);
 
-            // Save the file
-            string outputFileName = $"Receipt_{receiptId}.xlsx";
+            string outputFileName = $"Receipt_{receiptId}_{DateTime.Now:HHmmss}.xlsx";
             string outputPath = Path.Combine(dhkReceiptFolder, outputFileName);
             workbook.Save(outputPath);
 
@@ -631,9 +610,8 @@ namespace DHKMontainApp.userControls
 
         private string CreateMultiPageReceipt(string receiptId, string customerName, DateTime receiptDate,
             decimal totalCartons, decimal totalPairs, decimal totalAmount, string currency,
-            SqlDataReader itemsReader, int totalItems, int totalPages, int itemsPerPage)
+            SQLiteDataReader itemsReader, int totalItems, int totalPages, int itemsPerPage)
         {
-            // Store all items in a list first
             List<Dictionary<string, object>> allItems = new List<Dictionary<string, object>>();
 
             while (itemsReader.Read())
@@ -651,36 +629,26 @@ namespace DHKMontainApp.userControls
 
             string firstPagePath = "";
 
-            // Create each page
             for (int page = 0; page < totalPages; page++)
             {
-                // Load template for each page
                 ExcelFile workbook = ExcelFile.Load(excelTemplatePath);
                 ExcelWorksheet worksheet = workbook.Worksheets[0];
 
-                // Fill headers with page number
                 FillTemplateHeadersMultiPage(worksheet, receiptId, customerName, receiptDate, page + 1, totalPages);
 
-                // Calculate start and end indices for this page
                 int startIndex = page * itemsPerPage;
                 int endIndex = Math.Min(startIndex + itemsPerPage, allItems.Count);
 
-                // Fill items for this page
                 FillTemplateItemsMultiPage(worksheet, allItems, startIndex, endIndex);
 
-                // Fill summary (show totals on all pages)
                 FillTemplateSummary(worksheet, totalCartons, totalPairs, totalAmount, currency);
-
-                // Add page numbering
                 AddPageNumbering(worksheet, page + 1, totalPages);
 
-                // Save this page
                 string pageSuffix = totalPages > 1 ? $"_Page_{page + 1}_of_{totalPages}" : "";
                 string outputFileName = $"Receipt_{receiptId}{pageSuffix}.xlsx";
                 string outputPath = Path.Combine(dhkReceiptFolder, outputFileName);
                 workbook.Save(outputPath);
 
-                // Save first page path for return value
                 if (page == 0)
                     firstPagePath = outputPath;
             }
@@ -691,29 +659,24 @@ namespace DHKMontainApp.userControls
         private void FillTemplateHeadersMultiPage(ExcelWorksheet worksheet, string receiptId,
             string customerName, DateTime receiptDate, int currentPage, int totalPages)
         {
-            // Fill standard headers
-            worksheet.Cells[7, 1].Value = receiptDate.ToString("dd/MM/yyyy"); // B8
-            worksheet.Cells[7, 4].Value = customerName; // E8
+            worksheet.Cells[7, 1].Value = receiptDate.ToString("dd/MM/yyyy");
+            worksheet.Cells[7, 4].Value = customerName;
 
-            // Add page number to receipt ID
             string receiptIdWithPage = totalPages > 1 ? $"{receiptId}-{currentPage}" : receiptId;
-            worksheet.Cells[8, 1].Value = receiptIdWithPage; // B9
+            worksheet.Cells[8, 1].Value = receiptIdWithPage;
         }
 
         private void FillTemplateItemsMultiPage(ExcelWorksheet worksheet, List<Dictionary<string, object>> allItems,
             int startIndex, int endIndex)
         {
-            // Items start from row 11 (index 10) to row 35 (index 34)
             int startRow = 10;
             int maxRows = 25;
 
-            // Clear existing data from rows 11-35
             for (int row = startRow; row < startRow + maxRows; row++)
             {
-                for (int col = 0; col < 8; col++) // Columns A-H
+                for (int col = 0; col < 8; col++)
                 {
                     worksheet.Cells[row, col].Value = "";
-                    // Clear borders
                     worksheet.Cells[row, col].Style.Borders.SetBorders(MultipleBorders.None,
                         SpreadsheetColor.FromName(ColorName.Black), LineStyle.None);
                 }
@@ -731,27 +694,16 @@ namespace DHKMontainApp.userControls
                 decimal unitPrice = Convert.ToDecimal(item["UnitPrice"]);
                 decimal itemTotal = Convert.ToDecimal(item["ItemTotal"]);
 
-                // Column B (index 1): المبلغ (Item Total)
                 worksheet.Cells[currentRow, 1].Value = itemTotal.ToString("N2");
-
-                // Column C (index 2): كارتون (Cartons)
                 worksheet.Cells[currentRow, 2].Value = cartons.ToString("N0");
-
-                // Column D (index 3): السعر الزوج (Unit Price)
                 worksheet.Cells[currentRow, 3].Value = unitPrice.ToString("N2");
-
-                // Column E (index 4): زوج (Pairs per Carton)
                 worksheet.Cells[currentRow, 4].Value = pairsPerCarton.ToString("N0");
-
-                // Column F (index 5): المادة (Product Name)
                 worksheet.Cells[currentRow, 5].Value = productName;
 
-                // Merge columns F, G, H for product name
                 var mergeRange = worksheet.Cells.GetSubrangeAbsolute(currentRow, 5, currentRow, 7);
                 mergeRange.Merged = true;
                 mergeRange.Style.HorizontalAlignment = HorizontalAlignmentStyle.Center;
 
-                // Apply borders to the row
                 ApplyBordersToRow(worksheet, currentRow, 1, 7);
 
                 currentRow++;
@@ -760,32 +712,18 @@ namespace DHKMontainApp.userControls
 
         private void AddPageNumbering(ExcelWorksheet worksheet, int currentPage, int totalPages)
         {
-            // Add page number at row 37 (F37)
-            int pageRow = 37; // Row 38 (0-based)
-
+            int pageRow = 37;
             string pageText = $"صفحة {currentPage}-{totalPages}";
-
-            worksheet.Cells[pageRow, 4].Value = pageText; // F37
+            worksheet.Cells[pageRow, 4].Value = pageText;
         }
-
-
 
         private void FillTemplateSummary(ExcelWorksheet worksheet, decimal totalCartons, decimal totalPairs, decimal totalAmount, string currency)
         {
-            // Fill the summary row at the bottom (row 36)
-            int summaryRow = 35; // Row 36 (0-based index)
+            int summaryRow = 35;
 
-            // Fill summary data according to your template:
-            // Column A: boxcount (total cartons)
             worksheet.Cells[summaryRow, 1].Value = totalCartons.ToString("N0");
-
-            // Column C: couples (total pairs)
             worksheet.Cells[summaryRow, 3].Value = totalPairs.ToString("N0");
-
-            // Column E: currency type
             worksheet.Cells[summaryRow, 5].Value = currency;
-
-            // Column F: Price (total amount)
             worksheet.Cells[summaryRow, 6].Value = totalAmount.ToString("N2");
         }
 
@@ -796,10 +734,12 @@ namespace DHKMontainApp.userControls
                 Database.Open();
 
                 string updateQuery = @"UPDATE Receipts SET FilePath = @FilePath WHERE ReceiptID = @ReceiptID";
-                SqlCommand cmd = new SqlCommand(updateQuery, Database.con);
-                cmd.Parameters.AddWithValue("@FilePath", newFilePath);
-                cmd.Parameters.AddWithValue("@ReceiptID", receiptId);
-                cmd.ExecuteNonQuery();
+                using (var cmd = new SQLiteCommand(updateQuery, Database.con))
+                {
+                    cmd.Parameters.AddWithValue("@FilePath", newFilePath);
+                    cmd.Parameters.AddWithValue("@ReceiptID", receiptId);
+                    cmd.ExecuteNonQuery();
+                }
 
                 Database.Close();
             }
@@ -812,7 +752,6 @@ namespace DHKMontainApp.userControls
 
         private void txtCustomerSearch_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Allow Enter key to trigger search
             if (e.KeyChar == (char)Keys.Enter)
             {
                 searchTimer.Stop();
@@ -835,14 +774,10 @@ namespace DHKMontainApp.userControls
 
             try
             {
-                // Check for any files with this receipt ID (for multi-page receipts)
                 string[] possibleFiles = Directory.GetFiles(dhkReceiptFolder, $"*{receiptID}*.xlsx");
-
-                // Sort files to get the first page first
                 Array.Sort(possibleFiles);
                 string filePath = possibleFiles.FirstOrDefault();
 
-                // If file doesn't exist, ask user if they want to create it
                 if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
                 {
                     DialogResult result = MessageBox.Show(
@@ -853,9 +788,7 @@ namespace DHKMontainApp.userControls
 
                     if (result == DialogResult.Yes)
                     {
-                        // Recreate the Excel file from template
                         filePath = RecreateReceiptFromTemplate(receiptID);
-
                         if (string.IsNullOrEmpty(filePath))
                         {
                             MessageBox.Show("تعذر إنشاء ملف الإكسل", "خطأ",
@@ -863,18 +796,15 @@ namespace DHKMontainApp.userControls
                             return;
                         }
 
-                        // Update the possible files list after recreation
                         possibleFiles = Directory.GetFiles(dhkReceiptFolder, $"*{receiptID}*.xlsx");
                         Array.Sort(possibleFiles);
                     }
                     else
                     {
-                        // User chose not to create the file
                         return;
                     }
                 }
 
-                // Open all files first
                 int openedCount = 0;
                 foreach (string file in possibleFiles)
                 {
@@ -893,7 +823,6 @@ namespace DHKMontainApp.userControls
                     }
                 }
 
-                // Show brief message without requiring user interaction
                 if (openedCount > 0)
                 {
                     string message = openedCount > 1 ?
@@ -932,13 +861,9 @@ namespace DHKMontainApp.userControls
 
             try
             {
-                // Check for any files with this receipt ID (for multi-page receipts)
                 string[] possibleFiles = Directory.GetFiles(dhkReceiptFolder, $"*{receiptID}*.xlsx");
-
-                // Sort files to get pages in correct order
                 Array.Sort(possibleFiles);
 
-                // Check if any files exist
                 bool filesExist = false;
                 foreach (string file in possibleFiles)
                 {
@@ -949,7 +874,6 @@ namespace DHKMontainApp.userControls
                     }
                 }
 
-                // If no files exist, ask user if they want to create them
                 if (!filesExist)
                 {
                     DialogResult createResult = MessageBox.Show(
@@ -960,9 +884,7 @@ namespace DHKMontainApp.userControls
 
                     if (createResult == DialogResult.Yes)
                     {
-                        // Recreate the Excel file from template
                         string newFilePath = RecreateReceiptFromTemplate(receiptID);
-
                         if (string.IsNullOrEmpty(newFilePath))
                         {
                             MessageBox.Show("تعذر إنشاء ملف الفاتورة", "خطأ",
@@ -970,18 +892,15 @@ namespace DHKMontainApp.userControls
                             return;
                         }
 
-                        // Refresh the files list
                         possibleFiles = Directory.GetFiles(dhkReceiptFolder, $"*{receiptID}*.xlsx");
                         Array.Sort(possibleFiles);
                     }
                     else
                     {
-                        // User chose not to create the file
                         return;
                     }
                 }
 
-                // Show a confirmation dialog
                 DialogResult printResult = MessageBox.Show($"هل تريد طباعة الفاتورة رقم: {receiptID}؟",
                     "تأكيد الطباعة", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
@@ -990,7 +909,6 @@ namespace DHKMontainApp.userControls
                     return;
                 }
 
-                // Print all files
                 int printedCount = 0;
                 foreach (string file in possibleFiles)
                 {
@@ -1003,14 +921,12 @@ namespace DHKMontainApp.userControls
                     }
                 }
 
-                // Show result message
                 string message = printedCount > 0
                     ? $"تم إرسال {printedCount} صفحة للطابعة بنجاح"
                     : "تعذر إرسال الملفات للطابعة";
 
                 MessageBox.Show(message, "نتيجة الطباعة",
                     MessageBoxButtons.OK, printedCount > 0 ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
-
             }
             catch (Exception ex)
             {
@@ -1018,27 +934,22 @@ namespace DHKMontainApp.userControls
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
         private bool PrintExcelFile(string filePath)
         {
             try
             {
-                // Load the Excel file
                 SpreadsheetInfo.SetLicense("FREE-LIMITED-KEY");
                 ExcelFile workbook = ExcelFile.Load(filePath);
-
-                // Get the first worksheet
                 ExcelWorksheet worksheet = workbook.Worksheets[0];
 
-                // Configure print options
                 var printOptions = worksheet.PrintOptions;
                 printOptions.NumberOfCopies = 1;
                 printOptions.Portrait = true;
                 printOptions.FitWorksheetWidthToPages = 1;
                 printOptions.FitWorksheetHeightToPages = 1;
 
-                // Print the worksheet
                 workbook.Print();
-
                 return true;
             }
             catch (Exception ex)
@@ -1049,38 +960,62 @@ namespace DHKMontainApp.userControls
             }
         }
 
+
+
+        private void UpdateSelectedTotal()
+        {
+            if (itemsDataTable != null && itemsDataTable.Rows.Count > 0)
+            {
+                decimal sum = 0;
+                foreach (DataRow row in itemsDataTable.Rows)
+                {
+                    if (row["ItemTotal"] != DBNull.Value)
+                        sum += Convert.ToDecimal(row["ItemTotal"]);
+                }
+                lblTotalAmount.Text = sum.ToString("N2") + "$";
+            }
+            else
+            {
+                lblTotalAmount.Text = "0.00$";
+            }
+        }
+
         private void btnDelete_Click(object sender, EventArgs e)
         {
-            // Delete selected receipts (and their items) from DB and refresh the grid
             if (dataGridViewSales.SelectedRows.Count == 0)
             {
                 MessageBox.Show("يرجى اختيار فاتورة للحذف.", "تنبيه", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            var confirm = MessageBox.Show("هل أنت متأكد من حذف الفاتورة المحددة؟ سيتم حذف جميع بنودها.", "تأكيد الحذف",
-                MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            var confirm = MessageBox.Show("هل أنت متأكد من حذف الفاتورة المحددة؟ سيتم حذف جميع بنودها والملفات المرتبطة بها.",
+                "تأكيد الحذف", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (confirm != DialogResult.Yes) return;
+
+            List<string> receiptIDs = new List<string>();
+            foreach (DataGridViewRow row in dataGridViewSales.SelectedRows)
+            {
+                var id = row.Cells["ReceiptID"].Value?.ToString();
+                if (!string.IsNullOrWhiteSpace(id))
+                    receiptIDs.Add(id);
+            }
+
+            if (receiptIDs.Count == 0) return;
 
             try
             {
                 Database.Open();
                 using (var tran = Database.con.BeginTransaction())
                 {
-                    foreach (DataGridViewRow row in dataGridViewSales.SelectedRows)
+                    foreach (string receiptID in receiptIDs)
                     {
-                        var receiptID = row.Cells["ReceiptID"].Value?.ToString();
-                        if (string.IsNullOrWhiteSpace(receiptID)) continue;
-
-                        // delete items first
-                        using (var cmd = new SqlCommand("DELETE FROM ReceiptItems WHERE ReceiptID = @id", Database.con, tran))
+                        using (var cmd = new SQLiteCommand("DELETE FROM ReceiptItems WHERE ReceiptID = @id", Database.con, tran))
                         {
                             cmd.Parameters.AddWithValue("@id", receiptID);
                             cmd.ExecuteNonQuery();
                         }
 
-                        // delete receipt
-                        using (var cmd2 = new SqlCommand("DELETE FROM Receipts WHERE ReceiptID = @id", Database.con, tran))
+                        using (var cmd2 = new SQLiteCommand("DELETE FROM Receipts WHERE ReceiptID = @id", Database.con, tran))
                         {
                             cmd2.Parameters.AddWithValue("@id", receiptID);
                             cmd2.ExecuteNonQuery();
@@ -1090,9 +1025,41 @@ namespace DHKMontainApp.userControls
                     tran.Commit();
                 }
 
-                MessageBox.Show("تم الحذف بنجاح.", "نجاح", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                List<string> failedFiles = new List<string>();
+                foreach (string receiptID in receiptIDs)
+                {
+                    try
+                    {
+                        string[] files = Directory.GetFiles(dhkReceiptFolder, $"*{receiptID}*.xlsx");
+                        foreach (string file in files)
+                        {
+                            try
+                            {
+                                File.Delete(file);
+                            }
+                            catch (Exception ex)
+                            {
+                                failedFiles.Add($"{Path.GetFileName(file)} ({ex.Message})");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        failedFiles.Add($"خطأ في البحث عن ملفات الفاتورة {receiptID}: {ex.Message}");
+                    }
+                }
 
-                // Refresh view respecting current filters
+                string message = "تم حذف الفاتورة من قاعدة البيانات بنجاح.";
+                if (failedFiles.Count > 0)
+                {
+                    message += "\n\nبعض الملفات لم يتم حذفها:\n" + string.Join("\n", failedFiles);
+                    MessageBox.Show(message, "تحذير", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+                else
+                {
+                    MessageBox.Show(message, "نجاح", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+
                 PerformSearch();
             }
             catch (Exception ex)
@@ -1103,6 +1070,11 @@ namespace DHKMontainApp.userControls
             {
                 Database.Close();
             }
+
+
+
+
+
         }
     }
 }

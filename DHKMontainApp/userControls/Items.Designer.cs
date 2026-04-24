@@ -58,7 +58,7 @@
             this.panel1.Location = new System.Drawing.Point(5, 3);
             this.panel1.Name = "panel1";
             this.panel1.Padding = new System.Windows.Forms.Padding(0, 0, 0, 1);
-            this.panel1.Size = new System.Drawing.Size(890, 48);
+            this.panel1.Size = new System.Drawing.Size(984, 48);
             this.panel1.TabIndex = 2;
             // 
             // btn_refresh
@@ -91,7 +91,7 @@
             this.btn_remove.Image = global::DHKMontainApp.Properties.Resources.delete_forever_24dp_FFFFFF_FILL0_wght400_GRAD0_opsz24;
             this.btn_remove.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btn_remove.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btn_remove.Location = new System.Drawing.Point(546, 0);
+            this.btn_remove.Location = new System.Drawing.Point(640, 0);
             this.btn_remove.Name = "btn_remove";
             this.btn_remove.Padding = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.btn_remove.RightToLeft = System.Windows.Forms.RightToLeft.No;
@@ -113,7 +113,7 @@
             this.btnedite.Image = global::DHKMontainApp.Properties.Resources.edit_24dp_F3F3F3_FILL0_wght400_GRAD0_opsz24;
             this.btnedite.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnedite.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btnedite.Location = new System.Drawing.Point(635, 0);
+            this.btnedite.Location = new System.Drawing.Point(729, 0);
             this.btnedite.Name = "btnedite";
             this.btnedite.Padding = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.btnedite.RightToLeft = System.Windows.Forms.RightToLeft.No;
@@ -135,7 +135,7 @@
             this.btn_addItems.Image = global::DHKMontainApp.Properties.Resources.add_box_24dp_FFFFFF_FILL0_wght400_GRAD0_opsz24;
             this.btn_addItems.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btn_addItems.ImeMode = System.Windows.Forms.ImeMode.NoControl;
-            this.btn_addItems.Location = new System.Drawing.Point(735, 0);
+            this.btn_addItems.Location = new System.Drawing.Point(829, 0);
             this.btn_addItems.Name = "btn_addItems";
             this.btn_addItems.Padding = new System.Windows.Forms.Padding(0, 0, 12, 0);
             this.btn_addItems.RightToLeft = System.Windows.Forms.RightToLeft.No;
@@ -175,7 +175,7 @@
             this.dataGridView1.Location = new System.Drawing.Point(0, 0);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.dataGridView1.Size = new System.Drawing.Size(890, 511);
+            this.dataGridView1.Size = new System.Drawing.Size(984, 511);
             this.dataGridView1.TabIndex = 3;
             // 
             // panel4
@@ -185,7 +185,7 @@
             this.panel4.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel4.Location = new System.Drawing.Point(5, 51);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(890, 35);
+            this.panel4.Size = new System.Drawing.Size(984, 35);
             this.panel4.TabIndex = 4;
             // 
             // panel5
@@ -194,7 +194,7 @@
             this.panel5.Controls.Add(this.panel3);
             this.panel5.Controls.Add(this.txtSearch);
             this.panel5.Dock = System.Windows.Forms.DockStyle.Right;
-            this.panel5.Location = new System.Drawing.Point(492, 0);
+            this.panel5.Location = new System.Drawing.Point(586, 0);
             this.panel5.Name = "panel5";
             this.panel5.Size = new System.Drawing.Size(398, 35);
             this.panel5.TabIndex = 13;
@@ -219,7 +219,7 @@
             this.panel2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel2.Location = new System.Drawing.Point(5, 86);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(890, 511);
+            this.panel2.Size = new System.Drawing.Size(984, 511);
             this.panel2.TabIndex = 5;
             // 
             // items
@@ -233,7 +233,7 @@
             this.Name = "items";
             this.Padding = new System.Windows.Forms.Padding(5, 3, 5, 3);
             this.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
-            this.Size = new System.Drawing.Size(900, 600);
+            this.Size = new System.Drawing.Size(994, 600);
             this.panel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
             this.panel4.ResumeLayout(false);

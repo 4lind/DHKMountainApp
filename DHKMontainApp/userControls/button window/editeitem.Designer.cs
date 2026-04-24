@@ -77,7 +77,9 @@
             this.txtcount.Name = "txtcount";
             this.txtcount.Size = new System.Drawing.Size(203, 19);
             this.txtcount.TabIndex = 50;
+            this.txtcount.Click += new System.EventHandler(this.txtcount_Click);
             this.txtcount.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtcount_KeyDown);
+            this.txtcount.Leave += new System.EventHandler(this.txtcount_Leave);
             // 
             // txtName
             // 
@@ -206,7 +208,9 @@
             this.txtcouple.Name = "txtcouple";
             this.txtcouple.Size = new System.Drawing.Size(203, 19);
             this.txtcouple.TabIndex = 59;
+            this.txtcouple.Click += new System.EventHandler(this.txtcouple_Click);
             this.txtcouple.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtcouple_KeyDown);
+            this.txtcouple.Leave += new System.EventHandler(this.txtcouple_Leave);
             // 
             // label3
             // 
@@ -252,6 +256,7 @@
             this.Controls.Add(this.panel3);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "editeitem";
+            this.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "تعديل";
             this.panel1.ResumeLayout(false);

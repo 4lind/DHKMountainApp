@@ -1,20 +1,15 @@
-﻿using DHKMontainApp.userControls.button_window;
+﻿using System.Data.SQLite;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Data.SqlClient;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using DHKMontainApp.userControls.button_window;
 
 namespace DHKMontainApp
 {
     public partial class costumers : UserControl
     {
-        DataTable customerTable; // global variable
+        DataTable customerTable;
 
         public costumers()
         {
@@ -22,43 +17,29 @@ namespace DHKMontainApp
             StyleDataGrid(dataGridView1);
             LoadCustomerData();
             buttonR.MakeButtonRounded(btn_refresh, 20);
-
         }
-
-
 
         private void btn_addCostumer_Click(object sender, EventArgs e)
         {
             addCostumer addForm = new addCostumer();
-
-            // Show as dialog and check if user clicked OK
             if (addForm.ShowDialog() == DialogResult.OK)
-            {
-                // Reload the DataGrid to show the new customer
                 LoadCustomerData();
-            }
-
         }
-
-
 
         public void LoadCustomerData()
         {
             Database.Close();
             Database.Open();
 
-            SqlDataAdapter da = new SqlDataAdapter(
-                "SELECT id, cName, cPhone, Address, Company FROM customer",
-                Database.con
-            );
-
-            customerTable = new DataTable();
-            da.Fill(customerTable);
-
-            dataGridView1.DataSource = customerTable;
+            string query = "SELECT id, cName, cPhone, Address, Company FROM customer";
+            using (var da = new SQLiteDataAdapter(query, Database.con))
+            {
+                customerTable = new DataTable();
+                da.Fill(customerTable);
+                dataGridView1.DataSource = customerTable;
+            }
 
             StyleDataGrid(dataGridView1);
-
             Database.Close();
         }
 
@@ -82,6 +63,11 @@ namespace DHKMontainApp
             dgv.DefaultCellStyle.Font = new Font("Segoe UI", 11);
 
             dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(28, 32, 52);
+
+
+
+            dgv.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
+            dgv.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
 
             dgv.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(23, 27, 44);
             dgv.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
@@ -116,16 +102,11 @@ namespace DHKMontainApp
 
         }
 
-
-
         private void txtSearch_TextChanged(object sender, EventArgs e)
         {
             if (customerTable == null) return;
-
             string s = txtSearch.Text.Replace("'", "''");
-
-            customerTable.DefaultView.RowFilter =
-                $"cName LIKE '%{s}%'";
+            customerTable.DefaultView.RowFilter = $"cName LIKE '%{s}%'";
         }
 
         private void txtEdite_Click(object sender, EventArgs e)
@@ -136,52 +117,37 @@ namespace DHKMontainApp
                 return;
             }
 
-            // Get old values
             string oldName = dataGridView1.CurrentRow.Cells["cName"].Value.ToString();
             string oldPhone = dataGridView1.CurrentRow.Cells["cPhone"].Value.ToString();
             string oldAddress = dataGridView1.CurrentRow.Cells["Address"].Value.ToString();
             string oldCompany = dataGridView1.CurrentRow.Cells["Company"].Value.ToString();
 
-            // Open EditForm
             EditForm editForm = new EditForm(oldName, oldPhone, oldAddress, oldCompany);
-
             if (editForm.ShowDialog() == DialogResult.OK)
             {
-                // Save updates to database
                 Database.Open();
-
-                SqlCommand cmd = new SqlCommand(@"
-            UPDATE customer 
-            SET cName = @newName, 
-                cPhone = @newPhone, 
-                Address = @newAddress, 
-                Company = @newCompany
-            WHERE cName = @oldName AND cPhone = @oldPhone
-        ", Database.con);
-
-                cmd.Parameters.AddWithValue("@newName", editForm.NewName);
-                cmd.Parameters.AddWithValue("@newPhone", editForm.NewPhone);
-                cmd.Parameters.AddWithValue("@newAddress", editForm.NewAddress);
-                cmd.Parameters.AddWithValue("@newCompany", editForm.NewCompany);
-
-                cmd.Parameters.AddWithValue("@oldName", oldName);
-                cmd.Parameters.AddWithValue("@oldPhone", oldPhone);
-
-                cmd.ExecuteNonQuery();
+                string updateQuery = @"
+                    UPDATE customer 
+                    SET cName = @newName, cPhone = @newPhone, Address = @newAddress, Company = @newCompany
+                    WHERE cName = @oldName AND cPhone = @oldPhone";
+                using (var cmd = new SQLiteCommand(updateQuery, Database.con))
+                {
+                    cmd.Parameters.AddWithValue("@newName", editForm.NewName);
+                    cmd.Parameters.AddWithValue("@newPhone", editForm.NewPhone);
+                    cmd.Parameters.AddWithValue("@newAddress", editForm.NewAddress);
+                    cmd.Parameters.AddWithValue("@newCompany", editForm.NewCompany);
+                    cmd.Parameters.AddWithValue("@oldName", oldName);
+                    cmd.Parameters.AddWithValue("@oldPhone", oldPhone);
+                    cmd.ExecuteNonQuery();
+                }
                 Database.Close();
-
-                // Reload DataGrid
                 LoadCustomerData();
             }
         }
 
+        private void btn_refresh_Click_1(object sender, EventArgs e) => LoadCustomerData();
 
 
-        private void btn_refresh_Click_1(object sender, EventArgs e)
-        {
-            LoadCustomerData();
-
-        }
 
         private void btn_remove_Click(object sender, EventArgs e)
         {
@@ -194,38 +160,59 @@ namespace DHKMontainApp
             int id = Convert.ToInt32(dataGridView1.SelectedRows[0].Cells["id"].Value);
 
             DialogResult confirm = MessageBox.Show(
-                "هل أنت متأكد من حذف هذا الزبون؟",
+                "هل أنت متأكد من حذف هذا الزبون؟\n" +
+                "سيتم فصل جميع فواتيره (تبقى الفواتير لكن بدون رابط الزبون).",
                 "تأكيد الحذف",
                 MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning
-            );
+                MessageBoxIcon.Warning);
 
-            if (confirm == DialogResult.Yes)
+            if (confirm != DialogResult.Yes)
+                return;
+
+            try
             {
-                try
+                Database.Open();
+                using (var tran = Database.con.BeginTransaction())
                 {
-                    Database.Open();
+                    try
+                    {
+                        // 1. Set CustomerID to NULL in all receipts belonging to this customer
+                        string updateReceipts = "UPDATE Receipts SET CustomerID = NULL WHERE CustomerID = @id";
+                        using (var cmd = new SQLiteCommand(updateReceipts, Database.con, tran))
+                        {
+                            cmd.Parameters.AddWithValue("@id", id);
+                            cmd.ExecuteNonQuery();
+                        }
 
-                    string query = "DELETE FROM customer WHERE id = @id";
-                    SqlCommand cmd = new SqlCommand(query, Database.con);
-                    cmd.Parameters.AddWithValue("@id", id);
+                        // 2. Delete the customer
+                        string deleteCustomer = "DELETE FROM customer WHERE id = @id";
+                        using (var cmd = new SQLiteCommand(deleteCustomer, Database.con, tran))
+                        {
+                            cmd.Parameters.AddWithValue("@id", id);
+                            cmd.ExecuteNonQuery();
+                        }
 
-                    cmd.ExecuteNonQuery();
+                        tran.Commit();
+                        MessageBox.Show("تم حذف الزبون وفصل فواتيره بنجاح!", "نجاح", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        LoadCustomerData();
+                    }
+                    catch (Exception ex)
+                    {
+                        tran.Rollback();
+                        MessageBox.Show("حدث خطأ: " + ex.Message, "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                    Database.Close();
-
-                    MessageBox.Show("تم حذف الزبون بنجاح!", "نجاح", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                    LoadCustomerData();
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("حدث خطأ: " + ex.Message, "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        throw;
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                MessageBox.Show("حدث خطأ: " + ex.Message, "خطأ", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Database.Close();
+            }
         }
-
-
     }
 }
-

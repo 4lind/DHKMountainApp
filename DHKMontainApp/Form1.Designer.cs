@@ -41,8 +41,10 @@
             this.lbl_dashboard = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.btnSetting = new System.Windows.Forms.Button();
+            this.btn_paid = new System.Windows.Forms.Button();
             this.btn_sale = new System.Windows.Forms.Button();
             this.btn_payment = new System.Windows.Forms.Button();
+            this.btn_buy = new System.Windows.Forms.Button();
             this.btn_item = new System.Windows.Forms.Button();
             this.btn_costumer = new System.Windows.Forms.Button();
             this.btn_Home = new System.Windows.Forms.Button();
@@ -58,8 +60,10 @@
             // 
             this.panel2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(26)))), ((int)(((byte)(26)))), ((int)(((byte)(26)))));
             this.panel2.Controls.Add(this.btnSetting);
+            this.panel2.Controls.Add(this.btn_paid);
             this.panel2.Controls.Add(this.btn_sale);
             this.panel2.Controls.Add(this.btn_payment);
+            this.panel2.Controls.Add(this.btn_buy);
             this.panel2.Controls.Add(this.lbl_datetime);
             this.panel2.Controls.Add(this.lblDate);
             this.panel2.Controls.Add(this.btn_item);
@@ -104,7 +108,7 @@
             // 
             // homePanel
             // 
-            this.homePanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(62)))), ((int)(((byte)(95)))));
+            this.homePanel.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(50)))), ((int)(((byte)(52)))), ((int)(((byte)(77)))));
             resources.ApplyResources(this.homePanel, "homePanel");
             this.homePanel.Name = "homePanel";
             // 
@@ -137,6 +141,16 @@
             this.btnSetting.UseVisualStyleBackColor = true;
             this.btnSetting.Click += new System.EventHandler(this.btnSetting_Click);
             // 
+            // btn_paid
+            // 
+            resources.ApplyResources(this.btn_paid, "btn_paid");
+            this.btn_paid.FlatAppearance.BorderSize = 0;
+            this.btn_paid.ForeColor = System.Drawing.SystemColors.ControlLightLight;
+            this.btn_paid.Image = global::DHKMontainApp.Properties.Resources.trolley_24dp_FFFFFF_FILL0_wght400_GRAD0_opsz24;
+            this.btn_paid.Name = "btn_paid";
+            this.btn_paid.UseVisualStyleBackColor = true;
+            this.btn_paid.Click += new System.EventHandler(this.btn_paid_Click);
+            // 
             // btn_sale
             // 
             resources.ApplyResources(this.btn_sale, "btn_sale");
@@ -152,10 +166,20 @@
             resources.ApplyResources(this.btn_payment, "btn_payment");
             this.btn_payment.FlatAppearance.BorderSize = 0;
             this.btn_payment.ForeColor = System.Drawing.SystemColors.ControlLightLight;
-            this.btn_payment.Image = global::DHKMontainApp.Properties.Resources.payment;
+            this.btn_payment.Image = global::DHKMontainApp.Properties.Resources.Sell;
             this.btn_payment.Name = "btn_payment";
             this.btn_payment.UseVisualStyleBackColor = true;
-            this.btn_payment.Click += new System.EventHandler(this.btn_payment_Click);
+            this.btn_payment.Click += new System.EventHandler(this.btn_payment_Click_1);
+            // 
+            // btn_buy
+            // 
+            resources.ApplyResources(this.btn_buy, "btn_buy");
+            this.btn_buy.FlatAppearance.BorderSize = 0;
+            this.btn_buy.ForeColor = System.Drawing.SystemColors.ControlLightLight;
+            this.btn_buy.Image = global::DHKMontainApp.Properties.Resources.payment;
+            this.btn_buy.Name = "btn_buy";
+            this.btn_buy.UseVisualStyleBackColor = true;
+            this.btn_buy.Click += new System.EventHandler(this.btn_buy_Click);
             // 
             // btn_item
             // 
@@ -197,6 +221,7 @@
             // 
             resources.ApplyResources(this, "$this");
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(62)))), ((int)(((byte)(95)))));
             this.Controls.Add(this.panel8);
             this.Controls.Add(this.panel2);
             this.Name = "Form1";
@@ -224,9 +249,11 @@
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.Label lblDate;
         private System.Windows.Forms.Label lbl_datetime;
+        private System.Windows.Forms.Button btn_buy;
+        private System.Windows.Forms.Button btnSetting;
+        private System.Windows.Forms.Button btn_paid;
         private System.Windows.Forms.Button btn_sale;
         private System.Windows.Forms.Button btn_payment;
-        private System.Windows.Forms.Button btnSetting;
     }
 }
 
